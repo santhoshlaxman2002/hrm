@@ -84,8 +84,6 @@ class DepartmentRepository:
 
     async def update(self, department: Department):
         await self.db.flush()
-        await self.db.refresh(department)
-
         return department
 
     async def deactivate(self, department: Department):
