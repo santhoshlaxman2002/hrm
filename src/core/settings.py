@@ -15,6 +15,8 @@ class Settings(BaseSettings):
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESJ_TOKEN_EXPIRE_DAYS: int = 7
+
+    ORGANIZATION_TIMEZONE: str = "Asia/Kolkata"
     
 @lru_cache
 def get_settings() -> Settings:
