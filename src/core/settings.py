@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     ORGANIZATION_TIMEZONE: str = "Asia/Kolkata"
 
     REDIS_URL: SecretStr
+
+    MONGODB_URL: SecretStr
+    MONGODB_DATABASE: str = "peoplehub"
     
 @lru_cache
 def get_settings() -> Settings:

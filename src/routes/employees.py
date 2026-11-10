@@ -1,7 +1,8 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.db.database import get_db
+from src.dependencies.audit import get_audit_service
 from src.dependencies.auth import get_current_user
 from src.dependencies.permissions import require_roles
 from src.models.enums import UserRole, EmploymentStatus
@@ -23,12 +24,28 @@ router = APIRouter()
 )
 async def create_employee(
     request: EmployeeCreate,
+    http_request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user = Depends(require_roles(UserRole.ADMIN))
+    current_user = Depends(require_roles(UserRole.ADMIN)),
+    audit_service = Depends(get_audit_service)
 ):
     service = EmployeeService(db=db)
 
-    return await service.create_employee(request=request)
+    employee = await service.create_employee(request=request)
+
+    await audit_service.log_event(
+        actor_user_id= str(current_user.id),
+        action= "EMPLOYEE_CREATED",
+        entity_type= "EMPLOYEE",
+        entity_id= str(employee.id),
+        metadata= {
+            "employee_code": employee.employee_code,
+            "department_id": str(employee.department_id),
+        },
+        request=http_request,
+    )
+
+    return employee
 
 @router.get(
     "",

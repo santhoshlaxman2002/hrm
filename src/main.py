@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from src.core.mongodb import create_mongodb_client, initialize_mongodb_indexes
 from src.core.redis import create_redis_client
+from src.core.settings import get_settings
 from src.middleware.rate_limit import RateLimitMiddleware
 from src.routes.auth import router as auth_router
 from src.routes.departments import router as department_router
@@ -11,12 +13,25 @@ from src.routes.leaves import router as leaves_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    settings = get_settings()
     redis_client = await create_redis_client()
+
+    try:
+        mongo_client = await create_mongodb_client()
+    except Exception:
+        await redis_client.aclose()
+        raise
+
     app.state.redis = redis_client
+    app.state.mongo_client = mongo_client
+    app.state.mongo_db = mongo_client[settings.MONGODB_DATABASE]
+
+    await initialize_mongodb_indexes(app.state.mongo_db)
 
     try:
         yield
     finally:
+        await mongo_client.close()
         await redis_client.aclose()
 
 app = FastAPI(title="People Hub API", lifespan=lifespan)
