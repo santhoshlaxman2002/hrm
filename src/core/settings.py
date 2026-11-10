@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     REFRESJ_TOKEN_EXPIRE_DAYS: int = 7
 
     ORGANIZATION_TIMEZONE: str = "Asia/Kolkata"
+
+    REDIS_URL: SecretStr
     
 @lru_cache
 def get_settings() -> Settings:
